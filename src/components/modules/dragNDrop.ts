@@ -1,6 +1,6 @@
-import SelectionUtils from '../selection';
+import SelectionUtils from "../selection";
 
-import Module from '../__module';
+import Module from "../__module";
 /**
  *
  */
@@ -43,20 +43,30 @@ export default class DragNDrop extends Module {
   private enableModuleBindings(): void {
     const { UI } = this.Editor;
 
-    this.readOnlyMutableListeners.on(UI.nodes.holder, 'drop', async (dropEvent: DragEvent) => {
-      await this.processDrop(dropEvent);
-    }, false);
+    this.readOnlyMutableListeners.on(
+      UI.nodes.holder,
+      "drop",
+      async (dropEvent: DragEvent) => {
+        await this.processDrop(dropEvent);
+      },
+      false
+    );
 
-    this.readOnlyMutableListeners.on(UI.nodes.holder, 'dragstart', () => {
+    this.readOnlyMutableListeners.on(UI.nodes.holder, "dragstart", () => {
       this.processDragStart();
     });
 
     /**
      * Prevent default browser behavior to allow drop on non-contenteditable elements
      */
-    this.readOnlyMutableListeners.on(UI.nodes.holder, 'dragover', (dragEvent: DragEvent) => {
-      this.processDragOver(dragEvent);
-    }, false);
+    this.readOnlyMutableListeners.on(
+      UI.nodes.holder,
+      "dragover",
+      (dragEvent: DragEvent) => {
+        this.processDragOver(dragEvent);
+      },
+      false
+    );
   }
 
   /**
@@ -72,11 +82,7 @@ export default class DragNDrop extends Module {
    * @param {DragEvent} dropEvent - drop event
    */
   private async processDrop(dropEvent: DragEvent): Promise<void> {
-    const {
-      BlockManager,
-      Paste,
-      Caret,
-    } = this.Editor;
+    const { BlockManager, Paste, Caret } = this.Editor;
 
     dropEvent.preventDefault();
 
@@ -112,8 +118,12 @@ export default class DragNDrop extends Module {
       block.dropTarget = false;
     });
 
-    if (SelectionUtils.isAtEditor && !SelectionUtils.isCollapsed && this.isStartedAtEditor) {
-      document.execCommand('delete');
+    if (
+      SelectionUtils.isAtEditor &&
+      !SelectionUtils.isCollapsed &&
+      this.isStartedAtEditor
+    ) {
+      document.execCommand("delete");
     }
 
     this.isStartedAtEditor = false;
@@ -122,12 +132,16 @@ export default class DragNDrop extends Module {
      * Try to set current block by drop target.
      * If drop target is not part of the Block, set last Block as current.
      */
-    const targetBlock = BlockManager.setCurrentBlockByChildNode(dropEvent.target as Node);
+    const targetBlock = BlockManager.setCurrentBlockByChildNode(
+      dropEvent.target as Node
+    );
 
     if (targetBlock) {
       this.Editor.Caret.setToBlock(targetBlock, Caret.positions.END);
     } else {
-      const lastBlock = BlockManager.setCurrentBlockByChildNode(BlockManager.lastBlock.holder);
+      const lastBlock = BlockManager.setCurrentBlockByChildNode(
+        BlockManager.lastBlock.holder
+      );
 
       this.Editor.Caret.setToBlock(lastBlock, Caret.positions.END);
     }
