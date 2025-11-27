@@ -14,6 +14,11 @@ export default class DragNDrop extends Module {
   private isStartedAtEditor = false;
 
   /**
+   * Currently dragged block id (if any)
+   */
+  private draggedBlockId: string | null = null;
+
+  /**
    * Toggle read-only state
    *
    * if state is true:
@@ -40,7 +45,7 @@ export default class DragNDrop extends Module {
 
     this.readOnlyMutableListeners.on(UI.nodes.holder, 'drop', async (dropEvent: DragEvent) => {
       await this.processDrop(dropEvent);
-    }, true);
+    }, false);
 
     this.readOnlyMutableListeners.on(UI.nodes.holder, 'dragstart', () => {
       this.processDragStart();
@@ -51,7 +56,7 @@ export default class DragNDrop extends Module {
      */
     this.readOnlyMutableListeners.on(UI.nodes.holder, 'dragover', (dragEvent: DragEvent) => {
       this.processDragOver(dragEvent);
-    }, true);
+    }, false);
   }
 
   /**
@@ -74,6 +79,34 @@ export default class DragNDrop extends Module {
     } = this.Editor;
 
     dropEvent.preventDefault();
+
+    // If a block reordering is in progress, try to handle drop if it was released outside of blocks
+    if (this.draggedBlockId) {
+      const draggedBlock = BlockManager.getBlockById(this.draggedBlockId);
+
+      if (draggedBlock) {
+        const fromIndex = BlockManager.getBlockIndex(draggedBlock);
+        let toIndex = BlockManager.blocks.length - 1;
+
+        // Adjust the index if moving forward in array
+        if (fromIndex < toIndex) {
+          toIndex -= 1;
+        }
+
+        // If block already last and no change needed — clear state
+        if (fromIndex !== toIndex) {
+          BlockManager.move(toIndex, fromIndex);
+          const moved = BlockManager.currentBlock;
+
+          if (moved) {
+            Caret.setToBlock(moved, Caret.positions.START);
+          }
+        }
+      }
+
+      this.clearDraggedBlock();
+      return;
+    }
 
     BlockManager.blocks.forEach((block) => {
       block.dropTarget = false;
@@ -111,6 +144,27 @@ export default class DragNDrop extends Module {
     }
 
     this.Editor.InlineToolbar.close();
+  }
+
+  /**
+   * Set dragged block id
+   */
+  public setDraggedBlockId(id: string | null): void {
+    this.draggedBlockId = id;
+  }
+
+  /**
+   * Clear dragged block id
+   */
+  public clearDraggedBlock(): void {
+    this.draggedBlockId = null;
+  }
+
+  /**
+   * Get currently dragged block id
+   */
+  public getDraggedBlockId(): string | null {
+    return this.draggedBlockId;
   }
 
   /**

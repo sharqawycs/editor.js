@@ -153,6 +153,117 @@ export default class BlockEvents extends Module {
   }
 
   /**
+   * Drag start handler for block reordering
+   *
+   * @param {DragEvent} event - dragstart event
+   */
+  public dragStart(event: DragEvent): void {
+    const { BlockManager, DragNDrop } = this.Editor;
+
+    const block = BlockManager.getBlockByChildNode(event.target as Node);
+
+    if (!block) {
+      return;
+    }
+
+    // Save dragged block in DragNDrop module for later use
+    DragNDrop.setDraggedBlockId(block.id);
+
+    // Add a visual marker for dragging state
+    block.holder.classList.add('ce-block--dragging');
+
+    try {
+      const dt = event.dataTransfer;
+
+      if (dt) {
+        dt.setData('text/x-editorjs-block', block.id);
+        dt.effectAllowed = 'move';
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  /**
+   * Drag end handler, clear dragging state
+   */
+  public dragEnd(event: DragEvent): void {
+    const { BlockManager, DragNDrop } = this.Editor;
+
+    const block = BlockManager.getBlockByChildNode(event.target as Node);
+
+    if (block) {
+      block.holder.classList.remove('ce-block--dragging');
+    }
+
+    DragNDrop.clearDraggedBlock();
+  }
+
+  /**
+   * Drop on block handler — perform reordering if block is dragged
+   *
+   * @param {DragEvent} event
+   */
+  public drop(event: DragEvent): void {
+    const { BlockManager, DragNDrop, Caret } = this.Editor;
+
+    // If there's no block dragged — don't handle here
+    const draggedId = DragNDrop.getDraggedBlockId();
+
+    if (!draggedId) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const targetBlock = BlockManager.getBlockByChildNode(event.target as Node);
+
+    if (!targetBlock) {
+      return;
+    }
+
+    const draggedBlock = BlockManager.getBlockById(draggedId);
+
+    if (!draggedBlock) {
+      return;
+    }
+
+    const fromIndex = BlockManager.getBlockIndex(draggedBlock);
+    const targetIndex = BlockManager.getBlockIndex(targetBlock);
+
+    const rect = (targetBlock.holder as HTMLElement).getBoundingClientRect();
+    const dropAfter = (event.clientY - rect.top) > (rect.height / 2);
+    let toIndex = targetIndex + (dropAfter ? 1 : 0);
+
+    // Compute destination index (targetIndex + 1 when dropAfter true), allowing toIndex to equal blocks.length
+    if (fromIndex === toIndex || fromIndex === toIndex - 1) {
+      DragNDrop.clearDraggedBlock();
+      draggedBlock.holder.classList.remove('ce-block--dragging');
+      return;
+    }
+
+    // Because BlockManager.move() computes insertion index in the array after the item was removed
+    // we need to adjust the destination index when moving a block forward in the array.
+    let adjustedToIndex = toIndex;
+    if (fromIndex < toIndex) {
+      adjustedToIndex = toIndex - 1;
+    }
+
+    // Perform move (use adjusted index when moving forward)
+    BlockManager.move(adjustedToIndex, fromIndex);
+
+    // Focus caret to moved block (BlockManager.currentBlock updated by move)
+    const movedBlock = BlockManager.currentBlock;
+
+    if (movedBlock) {
+      Caret.setToBlock(movedBlock, Caret.positions.START);
+    }
+
+    DragNDrop.clearDraggedBlock();
+  }
+
+  /**
    * Copying selected blocks
    * Before putting to the clipboard we sanitize all blocks and then copy to the clipboard
    *

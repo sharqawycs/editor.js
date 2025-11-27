@@ -108,6 +108,11 @@ export default class Block extends EventsDispatcher<BlockEvents> {
    *
    * @returns {{wrapper: string, content: string}}
    */
+  /**
+   * CSS classes for the Block
+   *
+   * @returns {{wrapper: string, content: string}}
+   */
   public static get CSS(): { [name: string]: string } {
     return {
       wrapper: 'ce-block',
@@ -152,6 +157,11 @@ export default class Block extends EventsDispatcher<BlockEvents> {
    * Tool's user configuration
    */
   public readonly config: ToolConfig;
+
+  /**
+   * Whether block was created with readOnly flag from editor
+   */
+  private readonly readOnly: boolean;
 
   /**
    * Cached inputs
@@ -231,6 +241,7 @@ export default class Block extends EventsDispatcher<BlockEvents> {
     this.blockAPI = new BlockAPI(this);
 
     this.tool = tool;
+    this.readOnly = readOnly;
     this.toolInstance = tool.create(data, this.blockAPI, readOnly);
 
     /**
@@ -787,6 +798,13 @@ export default class Block extends EventsDispatcher<BlockEvents> {
       });
 
     wrapper.appendChild(wrappedContentNode);
+
+    // Make block draggable when editor isn't read-only
+    try {
+      wrapper.draggable = !this.readOnly;
+    } catch (e) {
+      // Ignore if browser doesn't support draggable attribute
+    }
 
     return wrapper;
   }

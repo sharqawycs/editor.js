@@ -76,6 +76,10 @@
     }
   }
 
+  &--dragging {
+    opacity: 0.6;
+  }
+
   a {
     cursor: pointer;
     text-decoration: underline;

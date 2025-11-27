@@ -951,6 +951,22 @@ export default class BlockManager extends Module {
       BlockEvents.dragLeave(event);
     });
 
+    // Drag start for block move
+    this.readOnlyMutableListeners.on(block.holder, 'dragstart', (event: DragEvent) => {
+      BlockEvents.dragStart(event);
+    });
+
+    // Drag end cleanup
+    this.readOnlyMutableListeners.on(block.holder, 'dragend', (event: DragEvent) => {
+      BlockEvents.dragEnd(event);
+    });
+
+    // Drop on a block — for reorder
+    this.readOnlyMutableListeners.on(block.holder, 'drop', (event: DragEvent) => {
+      // Delegate block drop handling to BlockEvents — it will check if it's a block move
+      BlockEvents.drop(event);
+    });
+
     block.on('didMutated', (affectedBlock: Block) => {
       return this.blockDidMutated(BlockChangedMutationType, affectedBlock, {
         index: this.getBlockIndex(affectedBlock),

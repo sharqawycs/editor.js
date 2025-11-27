@@ -135,7 +135,7 @@ Take a look at the [example.html](example/example.html) to view more detailed ex
   - [ ] Implement Server and communication
   - [ ] Update basic tools to fit the new API
 - Other features
-  - [ ] Blocks drag'n'drop
+  - [x] Blocks drag'n'drop
   - [ ] New cross-block selection
   - [ ] New cross-block caret moving
 - Ecosystem improvements
